@@ -53,7 +53,7 @@ export async function refreshUser() {
 /** Persist the current session's spin result to the logged-in user's account */
 export async function persistCompletion() {
     const xHandle  = sessionStorage.getItem('zenkai_handle');
-    const spotType = sessionStorage.getItem('zenkai_result');
+    const spotType = localStorage.getItem('zenkai_result');
     if (!spotType) return;
     const token = getToken();
     if (!token) return;
@@ -68,7 +68,11 @@ export async function persistCompletion() {
 
 /** Get referral code from URL (?ref=CODE) if present */
 export function getRefCodeFromUrl() {
-    const raw = window.location.hash; // e.g. #/?ref=ABCDEF
-    const match = raw.match(/[?&]ref=([A-Z0-9]{6,12})/i);
-    return match ? match[1].toUpperCase() : null;
+    // Check both location.search (for plain URLs) and location.hash (for hash-router URLs)
+    const sources = [window.location.search, window.location.hash];
+    for (const src of sources) {
+        const match = src.match(/[?&]ref=([A-Za-z0-9]{4,16})/);
+        if (match) return match[1].toUpperCase();
+    }
+    return null;
 }

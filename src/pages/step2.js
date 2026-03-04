@@ -1,6 +1,5 @@
-// ZENKAI  Step 2: Follow & Tag Tasks + Turnstile challenge
+// ZENKAI  Step 2: Follow & Tag Tasks
 import { navigate } from '../router.js';
-import { renderTurnstile, executeChallenge } from '../turnstile.js';
 
 export function renderStep2(container) {
   const handle = sessionStorage.getItem('zenkai_handle') || '@warrior';
@@ -11,12 +10,12 @@ export function renderStep2(container) {
     {
       id: 'follow',
       icon: '',
-      label: 'Follow <a href="https://x.com/ZenkaiNFT" target="_blank" rel="noopener">@ZenkaiNFT</a> on X',
+      label: 'Follow <a href="https://x.com/zenkai_ETH" target="_blank" rel="noopener">@zenkai_ETH</a> on X',
     },
     {
       id: 'tag',
       icon: '',
-      label: 'Tag 2 allies in <a href="https://x.com/ZenkaiNFT" target="_blank" rel="noopener">this post</a> before spinning',
+      label: 'Tag 2 allies in <a href="https://x.com/zenkai_ETH" target="_blank" rel="noopener">this post</a> before spinning',
     },
   ];
 
@@ -40,7 +39,7 @@ export function renderStep2(container) {
     </div>
 
     <div class="step-title">Step 2  Oath of Allegiance</div>
-    <p class="step-tagline">Follow @ZenkaiNFT and tag 2 allies before spinning the Awakening Wheel.</p>
+    <p class="step-tagline">Follow @zenkai_ETH and tag 2 allies before spinning the Awakening Wheel.</p>
 
     <ul class="task-list" id="task-list">
       ${tasks.map(t => `
@@ -54,8 +53,6 @@ export function renderStep2(container) {
     </ul>
 
     <p class="task-hint" id="task-hint"></p>
-
-    <div id="cf-widget-step2" style="display:none"></div>
 
     <button class="btn-gold" id="step2-next" disabled>
       Proceed to Wheel
@@ -80,22 +77,7 @@ export function renderStep2(container) {
     nextBtn.disabled = completed.size < tasks.length;
   }
 
-  //  Turnstile 
-  let cfWidgetId = null;
 
-  // Render widget early so it has time to warm up
-  renderTurnstile('cf-widget-step2', {
-    onSuccess: (token) => {
-      // Human verified  store token and advance
-      sessionStorage.setItem('zenkai_cf_step2', token);
-      navigate('/step3');
-    },
-    onError: () => {
-      showHint('Security check failed. Please refresh and try again.');
-      nextBtn.disabled = false;
-      nextBtn.textContent = 'Proceed to Wheel';
-    },
-  }).then((id) => { cfWidgetId = id; });
 
   //  Tasks 
   taskItems.forEach((item) => {
@@ -133,9 +115,7 @@ export function renderStep2(container) {
 
   //  Navigation 
   nextBtn.addEventListener('click', () => {
-    nextBtn.disabled = true;
-    nextBtn.textContent = 'Verifying...';
-    executeChallenge(cfWidgetId);
+    navigate('/step3');
   });
 
   backBtn.addEventListener('click', () => navigate('/'));

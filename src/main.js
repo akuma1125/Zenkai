@@ -5,7 +5,7 @@
 import './style.css';
 import { initScene } from './scene.js';
 import { registerRoute, navigate, initRouter } from './router.js';
-import { getToken } from './auth.js';
+import { getToken, getRefCodeFromUrl } from './auth.js';
 import { renderStep1 } from './pages/step1.js';
 import { renderStep2 } from './pages/step2.js';
 import { renderStep3 } from './pages/step3.js';
@@ -15,11 +15,19 @@ import { renderSignup } from './pages/signup.js';
 import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
 
+// Capture referral code from URL before any navigation strips it
+const _refCode = getRefCodeFromUrl();
+if (_refCode) {
+  localStorage.setItem('zenkai_ref_pending', _refCode);
+  sessionStorage.setItem('zenkai_ref', _refCode); // fallback
+}
+
 // Initialize background scene
 initScene();
 
-// Root: redirect to /signup or /step1 based on auth state
+// Root: redirect to /signup (with ref code) or /step1/signup based on auth state
 function renderRoot() {
+  if (_refCode) { navigate('/signup?ref=' + _refCode); return; }
   navigate(getToken() ? '/step1' : '/signup');
 }
 

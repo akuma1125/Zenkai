@@ -27,11 +27,15 @@ export async function renderDashboard(container) {
   // Replace skeleton
   container.removeChild(skeleton);
 
-  const spotType    = user.spot_type || null;
-  const hasSpot     = spotType === 'gtd' || spotType === 'fcfs';
-  const xHandle     = user.x_handle || '—';
-  const extraSpins  = user.extra_spins || 0;
-  const completed   = !!user.completed_at;
+  const spotType      = user.spot_type || null;
+  const hasSpot       = spotType === 'gtd' || spotType === 'fcfs';
+  const xHandle       = user.x_handle || '\u2014';
+  const extraSpins    = user.extra_spins || 0;
+  const completed     = !!user.completed_at;
+  // Wallet: prefer server value, fall back to localStorage
+  const submittedWallet = user.submitted_wallet || localStorage.getItem('zenkai_submitted_wallet') || null;
+  if (submittedWallet) localStorage.setItem('zenkai_submitted_wallet', submittedWallet);
+  const shortWallet = submittedWallet ? submittedWallet.slice(0, 6) + '...' + submittedWallet.slice(-4) : null;
 
   // Build referral URL — use window.location.origin + hash router pattern
   const origin  = window.location.origin;
@@ -61,6 +65,11 @@ export async function renderDashboard(container) {
         <span class="dash-field-label">Allocation</span>
         <span class="share-result-badge ${spotBadgeClass}" style="font-size:0.75rem;padding:3px 10px 1px">${spotLabel}</span>
       </div>
+      ${submittedWallet ? `
+      <div class="dash-profile-row">
+        <span class="dash-field-label">Wallet</span>
+        <span class="dash-field-value" style="font-family:monospace;font-size:0.75rem;word-break:break-all">${submittedWallet}</span>
+      </div>` : ''}
     </div>
 
     ${!completed ? `
@@ -127,9 +136,10 @@ export async function renderDashboard(container) {
     if (res.ok) {
       // Pre-fill handle so step3→step4→persistCompletion works correctly
       if (user.x_handle) sessionStorage.setItem('zenkai_handle', user.x_handle);
-      sessionStorage.removeItem('zenkai_spins_used');
-      sessionStorage.removeItem('zenkai_best_result');
-      sessionStorage.removeItem('zenkai_result');
+      // Set spins_used to 1 so only 1 extra spin is available (not a fresh 2-spin session)
+      localStorage.setItem('zenkai_spins_used', '1');
+      localStorage.removeItem('zenkai_best_result');
+      localStorage.removeItem('zenkai_result');
       navigate('/step3');
     } else {
       btn.disabled = false;
@@ -139,9 +149,6 @@ export async function renderDashboard(container) {
 
   // ── Go to spin flow ─────────────────────────────────────────────
   document.getElementById('dash-go-spin')?.addEventListener('click', () => {
-    sessionStorage.removeItem('zenkai_spins_used');
-    sessionStorage.removeItem('zenkai_best_result');
-    sessionStorage.removeItem('zenkai_result');
     navigate('/step3');
   });
 

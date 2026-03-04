@@ -107,5 +107,8 @@ export async function initDb() {
     )
   `;
 
+  // Add referral_credited flag if missing from existing tables
+  try { await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_credited BOOLEAN NOT NULL DEFAULT FALSE`; } catch { /* ignore */ }
+
   console.log('✓ Database initialized — all tables ready');
 }

@@ -9,12 +9,12 @@ const tasks = [
   {
     id: 'like',
     label: '<a href="https://x.com/zenkai/status/1" target="_blank" rel="noopener">Like, retweet and tag two members</a>',
-    icon: '❤️',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/></svg>',
   },
   {
     id: 'quote',
     label: 'Quote with caption "<a href="https://x.com/zenkai/status/1" target="_blank" rel="noopener">ZENKAI</a>"',
-    icon: '🔁',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"/></svg>',
     requiresUrl: true,
   },
 ];
@@ -80,7 +80,8 @@ export function renderRegister(container) {
       <div class="section-number"><span class="section-num-badge">03</span><span class="section-num-label">address</span></div>
       ${hasProvider ? `
       <button class="btn-primary btn-connect" id="connect-wallet-btn">
-        <span>🔗 Connect Wallet</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Connect Wallet</span>
       </button>
       <div class="divider-or"><span>or</span></div>
       ` : ''}
@@ -217,7 +218,7 @@ export function renderRegister(container) {
           updateSubmit();
         }
       } catch {
-        connectBtn.innerHTML = '<span>🔗 Connect Wallet</span>';
+        connectBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span>Connect Wallet</span>';
         connectBtn.disabled = false;
         walletError.textContent = 'wallet connection rejected';
         walletError.classList.add('visible');

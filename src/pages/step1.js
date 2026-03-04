@@ -74,9 +74,9 @@ export function renderStep1(container) {
     const handle = val.startsWith('@') ? val : '@' + val;
     sessionStorage.setItem('zenkai_handle', handle);
     // Reset spin state for a fresh run
-    sessionStorage.removeItem('zenkai_spins_used');
-    sessionStorage.removeItem('zenkai_best_result');
-    sessionStorage.removeItem('zenkai_result');
+    localStorage.removeItem('zenkai_spins_used');
+    localStorage.removeItem('zenkai_best_result');
+    localStorage.removeItem('zenkai_result');
     navigate('/step2');
   });
 

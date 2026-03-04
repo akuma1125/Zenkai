@@ -9,9 +9,9 @@ export function renderLogin(container) {
     if (u && u.completed_at) {
       if (u.extra_spins > 0) {
         if (u.x_handle) sessionStorage.setItem('zenkai_handle', u.x_handle);
-        sessionStorage.removeItem('zenkai_spins_used');
-        sessionStorage.removeItem('zenkai_best_result');
-        sessionStorage.removeItem('zenkai_result');
+        localStorage.removeItem('zenkai_spins_used');
+        localStorage.removeItem('zenkai_best_result');
+        localStorage.removeItem('zenkai_result');
         navigate('/step3');
       } else {
         navigate('/dashboard');
@@ -94,16 +94,26 @@ export function renderLogin(container) {
         submitBtn.textContent = 'Sign In';
         return;
       }
+      // Sybil check: block login if browser is bound to a different account
+      const deviceAccount = localStorage.getItem('zenkai_device_account');
+      if (deviceAccount && deviceAccount !== data.user.username) {
+        errorEl.textContent = 'This browser is registered to a different account.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+        return;
+      }
       saveAuth(data.token, data.user);
+      // Bind browser to this account if not already set
+      localStorage.setItem('zenkai_device_account', data.user.username);
       // Route based on completion state
       const u = data.user;
       if (u.completed_at) {
         if (u.extra_spins > 0) {
           // Send them back to spin wheel; pre-fill handle from their account
           if (u.x_handle) sessionStorage.setItem('zenkai_handle', u.x_handle);
-          sessionStorage.removeItem('zenkai_spins_used');
-          sessionStorage.removeItem('zenkai_best_result');
-          sessionStorage.removeItem('zenkai_result');
+          localStorage.removeItem('zenkai_spins_used');
+          localStorage.removeItem('zenkai_best_result');
+          localStorage.removeItem('zenkai_result');
           navigate('/step3');
         } else {
           navigate('/dashboard');

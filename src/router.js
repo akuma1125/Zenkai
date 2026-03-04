@@ -28,7 +28,8 @@ export function initRouter() {
     appContainer = document.getElementById('app');
 
     function render() {
-        const hash = window.location.hash.slice(1) || '/';
+        const raw = window.location.hash.slice(1) || '/';
+        const hash = raw.split('?')[0] || '/';
         const routeFn = routes[hash];
 
         if (routeFn) {

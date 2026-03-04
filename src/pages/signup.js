@@ -6,7 +6,31 @@ export function renderSignup(container) {
   // Already logged in → go to step1
   if (getToken()) { navigate('/step1'); return; }
 
-  const refCode = getRefCodeFromUrl() || sessionStorage.getItem('zenkai_ref') || '';
+  // Sybil protection: block second account from same browser
+  const deviceAccount = localStorage.getItem('zenkai_device_account');
+  if (deviceAccount) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `
+      <div class="card-accent"></div>
+      <div class="brand-logo">ZENKAI</div>
+      <div class="brand-sub">access denied</div>
+      <div class="step-title">One Warrior Per Device</div>
+      <p class="step-tagline" style="margin-bottom:24px">This browser is already bound to an account. Only one account is allowed per device.</p>
+      <button class="btn-gold" id="su-go-login">Sign In to Your Account</button>
+    `;
+    container.appendChild(el);
+    document.getElementById('su-go-login').addEventListener('click', () => navigate('/login'));
+    return;
+  }
+
+  // Read ref code: localStorage (most reliable) → hash query → sessionStorage
+  const refCode = (() => {
+    const fromStorage = localStorage.getItem('zenkai_ref_pending') || sessionStorage.getItem('zenkai_ref');
+    if (fromStorage) return fromStorage;
+    const hashQuery = window.location.hash.split('?')[1] || '';
+    return new URLSearchParams(hashQuery).get('ref') || '';
+  })();
 
   const el = document.createElement('div');
   el.className = 'card';
@@ -35,16 +59,11 @@ export function renderSignup(container) {
       </div>
     </div>
 
-    ${refCode ? `
-    <div class="ref-prefill-row">
-      <span class="ref-prefill-label">Referred by code</span>
-      <span class="ref-prefill-value">${refCode}</span>
-    </div>` : `
     <div class="input-group">
       <label for="su-ref">Referral Code <span style="opacity:.5;font-weight:400">(optional)</span></label>
       <input type="text" id="su-ref" class="input-field" placeholder="XXXXXX"
-        autocomplete="off" spellcheck="false" maxlength="12" value="" />
-    </div>`}
+        autocomplete="off" spellcheck="false" maxlength="12" value="${refCode}" />
+    </div>
 
     <p class="input-error" id="su-error"></p>
 
@@ -98,6 +117,10 @@ export function renderSignup(container) {
         return;
       }
       saveAuth(data.token, data.user);
+      // Bind this browser to the new account
+      localStorage.setItem('zenkai_device_account', data.user.username);
+      localStorage.removeItem('zenkai_ref_pending');
+      sessionStorage.removeItem('zenkai_ref');
       navigate('/step1');
     } catch {
       errorEl.textContent = 'Connection error. Try again.';

@@ -34,28 +34,6 @@ function getClientIp(req) {
     );
 }
 
-/** Verify a Cloudflare Turnstile token server-side */
-async function verifyTurnstile(token, ip) {
-    if (!token) return false;
-    const secret = process.env.CF_TURNSTILE_SECRET;
-    if (!secret) {
-        console.warn('[Turnstile] CF_TURNSTILE_SECRET not set — skipping verification');
-        return true; // dev fallback
-    }
-    try {
-        const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ secret, response: token, remoteip: ip }),
-        });
-        const data = await resp.json();
-        return data.success === true;
-    } catch (err) {
-        console.error('[Turnstile] Verification fetch failed:', err.message);
-        return false;
-    }
-}
-
 // ── Serve Vite-built static files ──
 const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
@@ -109,7 +87,7 @@ app.post('/api/wallets', async (req, res) => {
 // ── POST /api/allowlist — Submit wallet to tier-specific list ──
 app.post('/api/allowlist', async (req, res) => {
     try {
-        const { address, handle, tier, cfToken } = req.body;
+        const { address, handle, tier } = req.body;
         const clientIp = getClientIp(req);
         const userAgent = (req.headers['user-agent'] || '').slice(0, 500);
 
@@ -120,42 +98,9 @@ app.post('/api/allowlist', async (req, res) => {
             return res.status(400).json({ error: 'invalid', message: 'Invalid tier' });
         }
 
-        // ── Turnstile verification ──────────────────────────────────
-        const humanVerified = await verifyTurnstile(cfToken, clientIp);
-        if (!humanVerified) {
-            return res.status(403).json({ error: 'bot', message: 'Human verification failed. Please refresh and try again.' });
-        }
-
         const normalizedAddress = address.toLowerCase();
         const cleanHandle = (handle || '').trim().slice(0, 100) || null;
         const sql = getDb();
-
-        // ── IP sybil check — flag if same IP already on any allowlist ──
-        const ipCheck = await sql`
-            SELECT COUNT(*) AS cnt FROM (
-                SELECT ip FROM allowlist_gtd  WHERE ip = ${clientIp}
-                UNION ALL
-                SELECT ip FROM allowlist_fcfs WHERE ip = ${clientIp}
-            ) sub
-        `;
-        if (parseInt(ipCheck[0]?.cnt, 10) >= 3) {
-            // Log and reject — same IP submitted 3+ times across tiers
-            await sql`
-                INSERT INTO sybil_log (ip, user_agent, handle, address, reason)
-                VALUES (${clientIp}, ${userAgent}, ${cleanHandle}, ${normalizedAddress}, 'ip_limit')
-            `.catch(() => {});
-            return res.status(429).json({ error: 'sybil', message: 'Submission limit reached for this network. Contact support if this is an error.' });
-        }
-
-        // ── UA sybil check — flag headless/bot UA strings ──────────────
-        const suspiciousUA = /headless|phantomjs|puppeteer|selenium|curl|python-requests|wget|bot|crawler|spider/i.test(userAgent);
-        if (suspiciousUA) {
-            await sql`
-                INSERT INTO sybil_log (ip, user_agent, handle, address, reason)
-                VALUES (${clientIp}, ${userAgent}, ${cleanHandle}, ${normalizedAddress}, 'bot_ua')
-            `.catch(() => {});
-            return res.status(403).json({ error: 'bot', message: 'Automated submission detected.' });
-        }
 
         try {
             if (tier === 'gtd') {
@@ -278,13 +223,8 @@ app.post('/api/auth/signup', async (req, res) => {
 
         let referrerId = null;
         if (referralCode) {
-            const referrer = await sql`SELECT id, extra_spins FROM users WHERE referral_code = ${referralCode.toUpperCase()}`;
-            if (referrer.length > 0) {
-                referrerId = referrer[0].id;
-                // Give referrer +1 extra spin (max 10)
-                const newSpins = Math.min((referrer[0].extra_spins || 0) + 1, 10);
-                await sql`UPDATE users SET extra_spins = ${newSpins} WHERE id = ${referrerId}`;
-            }
+            const referrer = await sql`SELECT id FROM users WHERE referral_code = ${referralCode.toUpperCase()}`;
+            if (referrer.length > 0) referrerId = referrer[0].id;
         }
 
         const [user] = await sql`
@@ -344,7 +284,20 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
                    extra_spins, completed_at, created_at FROM users WHERE id = ${req.user.id}
         `;
         if (rows.length === 0) return res.status(404).json({ error: 'not_found', message: 'User not found' });
-        res.json({ user: rows[0] });
+        const user = rows[0];
+        // Look up submitted wallet from allowlist tables (by handle)
+        let submittedWallet = null;
+        if (user.x_handle) {
+            const walletRows = await sql`
+                SELECT address FROM (
+                    SELECT address, created_at FROM allowlist_gtd  WHERE handle = ${user.x_handle}
+                    UNION ALL
+                    SELECT address, created_at FROM allowlist_fcfs WHERE handle = ${user.x_handle}
+                ) sub ORDER BY created_at DESC LIMIT 1
+            `;
+            submittedWallet = walletRows[0]?.address || null;
+        }
+        res.json({ user: { ...user, submitted_wallet: submittedWallet } });
     } catch (err) {
         res.status(500).json({ error: 'server', message: 'Internal server error' });
     }
@@ -361,6 +314,10 @@ app.post('/api/auth/complete', requireAuth, async (req, res) => {
 
         const sql = getDb();
         const handle = (xHandle || '').trim().slice(0, 100) || null;
+
+        // Snapshot state BEFORE update so we know if this is first completion
+        const [prev] = await sql`SELECT completed_at, referred_by, referral_credited FROM users WHERE id = ${req.user.id}`;
+        const isFirstCompletion = !prev?.completed_at;
 
         // Single atomic UPDATE — no separate SELECT needed.
         // Rank: gtd=1, fcfs=2, fail=3, NULL→4 (worst). LEAST picks best tier.
@@ -394,6 +351,13 @@ app.post('/api/auth/complete', requireAuth, async (req, res) => {
             WHERE id = ${req.user.id}
             RETURNING id, username, referral_code, x_handle, spot_type, extra_spins, completed_at
         `;
+
+        // Credit referrer +1 spin on the referred user's first ever spin completion
+        if (isFirstCompletion && prev?.referred_by && !prev?.referral_credited) {
+            await sql`UPDATE users SET extra_spins = LEAST(extra_spins + 1, 10) WHERE id = ${prev.referred_by}`;
+            await sql`UPDATE users SET referral_credited = TRUE WHERE id = ${req.user.id}`;
+        }
+
         res.json({ user });
     } catch (err) {
         console.error('[complete]', err);
