@@ -24,7 +24,7 @@ export async function initDb() {
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
-      username      VARCHAR(50) UNIQUE NOT NULL,
+      username      VARCHAR(254) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       x_handle      VARCHAR(100),
       spot_type     VARCHAR(10),
@@ -106,6 +106,9 @@ export async function initDb() {
       flagged_at TIMESTAMP DEFAULT NOW()
     )
   `;
+
+  // Widen username column to fit email addresses if upgrading from old schema
+  try { await sql`ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(254)`; } catch { /* ignore */ }
 
   // Add referral_credited flag if missing from existing tables
   try { await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_credited BOOLEAN NOT NULL DEFAULT FALSE`; } catch { /* ignore */ }

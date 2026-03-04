@@ -33,9 +33,9 @@ export function renderLogin(container) {
     <p class="step-tagline">Sign in to view your allocation and referral dashboard.</p>
 
     <div class="input-group">
-      <label for="li-username">Username</label>
-      <input type="text" id="li-username" class="input-field" placeholder="your_handle"
-        autocomplete="username" spellcheck="false" maxlength="50" />
+      <label for="li-username">Gmail</label>
+      <input type="email" id="li-username" class="input-field" placeholder="you@gmail.com"
+        autocomplete="email" spellcheck="false" maxlength="254" />
     </div>
 
     <div class="input-group">

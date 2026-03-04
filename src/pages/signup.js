@@ -43,9 +43,9 @@ export function renderSignup(container) {
     <p class="step-tagline">Create an account to save your result and unlock your referral link.</p>
 
     <div class="input-group">
-      <label for="su-username">Username</label>
-      <input type="text" id="su-username" class="input-field" placeholder="your_handle"
-        autocomplete="username" spellcheck="false" maxlength="50" />
+      <label for="su-username">Gmail</label>
+      <input type="email" id="su-username" class="input-field" placeholder="you@gmail.com"
+        autocomplete="email" spellcheck="false" maxlength="254" />
     </div>
 
     <div class="input-group">
@@ -78,10 +78,11 @@ export function renderSignup(container) {
   const errorEl    = document.getElementById('su-error');
   const submitBtn  = document.getElementById('su-submit');
 
+  const GMAIL_RE = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
   function validate() {
     const u = usernameEl.value.trim();
     const p = passwordEl.value;
-    submitBtn.disabled = u.length < 3 || p.length < 6;
+    submitBtn.disabled = !GMAIL_RE.test(u) || p.length < 6;
   }
 
   usernameEl.addEventListener('input', validate);

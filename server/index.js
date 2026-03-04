@@ -223,19 +223,18 @@ function makeReferralCode() {
 app.post('/api/auth/signup', async (req, res) => {
     try {
         const { username, password, referralCode } = req.body;
-        if (!username || username.length < 3 || username.length > 50)
-            return res.status(400).json({ error: 'invalid', message: 'Username must be 3–50 characters' });
+        const GMAIL_RE = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+        if (!username || !GMAIL_RE.test(username.trim()))
+            return res.status(400).json({ error: 'invalid', message: 'Please enter a valid Gmail address (@gmail.com)' });
         if (!password || password.length < 6)
             return res.status(400).json({ error: 'invalid', message: 'Password must be at least 6 characters' });
 
-        const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-        if (!cleanUsername)
-            return res.status(400).json({ error: 'invalid', message: 'Username may only contain letters, numbers and underscores' });
+        const cleanUsername = username.trim().toLowerCase();
 
         const sql = getDb();
         const existing = await sql`SELECT id FROM users WHERE username = ${cleanUsername}`;
         if (existing.length > 0)
-            return res.status(409).json({ error: 'duplicate', message: 'Username already taken' });
+            return res.status(409).json({ error: 'duplicate', message: 'An account with this Gmail already exists' });
 
         const hash = await bcrypt.hash(password, 12);
         let refCode = makeReferralCode();
