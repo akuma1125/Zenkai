@@ -136,8 +136,8 @@ export async function renderDashboard(container) {
     if (res.ok) {
       // Pre-fill handle so step3→step4→persistCompletion works correctly
       if (user.x_handle) sessionStorage.setItem('zenkai_handle', user.x_handle);
-      // Set spins_used to 1 so only 1 extra spin is available (not a fresh 2-spin session)
-      localStorage.setItem('zenkai_spins_used', '1');
+      // Sync localStorage with server's reset state (spins_used=1, best_result=null)
+      localStorage.setItem('zenkai_spins_used', String(data.spins_used ?? 1));
       localStorage.removeItem('zenkai_best_result');
       localStorage.removeItem('zenkai_result');
       navigate('/step3');

@@ -411,11 +411,16 @@ app.post('/api/auth/extra-spin', requireAuth, async (req, res) => {
         const rows = await sql`SELECT extra_spins FROM users WHERE id = ${req.user.id}`;
         if (!rows.length || rows[0].extra_spins < 1)
             return res.status(400).json({ error: 'none', message: 'No extra spins remaining' });
+        // Deduct spin AND reset spin session so the user gets exactly 1 fresh spin
         const [user] = await sql`
-            UPDATE users SET extra_spins = extra_spins - 1 WHERE id = ${req.user.id}
-            RETURNING extra_spins
+            UPDATE users
+            SET extra_spins = extra_spins - 1,
+                spins_used  = 1,
+                best_result = NULL
+            WHERE id = ${req.user.id}
+            RETURNING extra_spins, spins_used, best_result
         `;
-        res.json({ extra_spins: user.extra_spins });
+        res.json({ extra_spins: user.extra_spins, spins_used: user.spins_used, best_result: user.best_result });
     } catch (err) {
         res.status(500).json({ error: 'server', message: 'Internal server error' });
     }
