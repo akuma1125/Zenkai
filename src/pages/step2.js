@@ -76,7 +76,7 @@ export function renderStep2(container) {
   const taskItems = document.querySelectorAll('.task-item');
   const quoteLinkInput = document.getElementById('quote-link-input');
 
-  const TWEET_RE = /^https?:\/\/(x\.com|twitter\.com)\/\w+\/status\/\d+/i;
+  const TWEET_RE = /https?:\/\/(www\.)?(x\.com|twitter\.com|mobile\.twitter\.com)\/\w+\/status\/\d+/i;
 
   function showHint(msg) {
     hintEl.textContent = msg;
@@ -89,10 +89,10 @@ export function renderStep2(container) {
     nextBtn.disabled = completed.size < tasks.length;
   }
 
-  // Auto-complete quote task when a valid link is entered
-  quoteLinkInput.addEventListener('input', () => {
+  function checkQuoteInput() {
+    const val = quoteLinkInput.value.trim();
     const quoteItem = document.querySelector('.task-item[data-id="quote"]');
-    if (TWEET_RE.test(quoteLinkInput.value.trim())) {
+    if (TWEET_RE.test(val)) {
       if (!completed.has('quote')) {
         completed.add('quote');
         quoteItem.classList.add('completed');
@@ -105,7 +105,12 @@ export function renderStep2(container) {
         updateNext();
       }
     }
-  });
+  }
+
+  // Auto-complete quote task when a valid link is entered
+  quoteLinkInput.addEventListener('input', checkQuoteInput);
+  quoteLinkInput.addEventListener('paste', () => setTimeout(checkQuoteInput, 0));
+  quoteLinkInput.addEventListener('change', checkQuoteInput);
 
   //  Tasks 
   taskItems.forEach((item) => {
