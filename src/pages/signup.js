@@ -6,24 +6,6 @@ export function renderSignup(container) {
   // Already logged in → go to step1
   if (getToken()) { navigate('/step1'); return; }
 
-  // Sybil protection: block second account from same browser
-  const deviceAccount = localStorage.getItem('zenkai_device_account');
-  if (deviceAccount) {
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.innerHTML = `
-      <div class="card-accent"></div>
-      <div class="brand-logo">ZENKAI</div>
-      <div class="brand-sub">access denied</div>
-      <div class="step-title">One Warrior Per Device</div>
-      <p class="step-tagline" style="margin-bottom:24px">This browser is already bound to an account. Only one account is allowed per device.</p>
-      <button class="btn-gold" id="su-go-login">Sign In to Your Account</button>
-    `;
-    container.appendChild(el);
-    document.getElementById('su-go-login').addEventListener('click', () => navigate('/login'));
-    return;
-  }
-
   // Read ref code: localStorage (most reliable) → hash query → sessionStorage
   const refCode = (() => {
     const fromStorage = localStorage.getItem('zenkai_ref_pending') || sessionStorage.getItem('zenkai_ref');
@@ -40,12 +22,12 @@ export function renderSignup(container) {
     <div class="brand-sub">create account</div>
 
     <div class="step-title">Join the Protocol</div>
-    <p class="step-tagline">Enter your Gmail to create an account and unlock your referral link.</p>
+    <p class="step-tagline">Enter a username to create an account and unlock your referral link.</p>
 
     <div class="input-group">
-      <label for="su-username">Gmail</label>
-      <input type="email" id="su-username" class="input-field" placeholder="you@gmail.com"
-        autocomplete="email" spellcheck="false" maxlength="254" />
+      <label for="su-username">Username</label>
+      <input type="text" id="su-username" class="input-field" placeholder="your_username"
+        autocomplete="username" spellcheck="false" maxlength="100" />
     </div>
 
     <div class="input-group">
@@ -66,10 +48,8 @@ export function renderSignup(container) {
   const errorEl    = document.getElementById('su-error');
   const submitBtn  = document.getElementById('su-submit');
 
-  const GMAIL_RE = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
   function validate() {
-    const u = usernameEl.value.trim();
-    submitBtn.disabled = !GMAIL_RE.test(u);
+    submitBtn.disabled = usernameEl.value.trim().length < 3;
   }
 
   usernameEl.addEventListener('input', validate);
@@ -96,8 +76,6 @@ export function renderSignup(container) {
         return;
       }
       saveAuth(data.token, data.user);
-      // Bind this browser to the new account
-      localStorage.setItem('zenkai_device_account', data.user.username);
       localStorage.removeItem('zenkai_ref_pending');
       sessionStorage.removeItem('zenkai_ref');
       navigate('/step1');

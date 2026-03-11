@@ -53,7 +53,7 @@ export async function renderDashboard(container) {
     <!-- Profile block -->
     <div class="dash-profile">
       <div class="dash-profile-row">
-        <span class="dash-field-label">Gmail</span>
+        <span class="dash-field-label">Username</span>
         <span class="dash-field-value">${user.username}</span>
       </div>
       <div class="dash-profile-row">

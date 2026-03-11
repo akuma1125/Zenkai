@@ -22,12 +22,12 @@ export function renderLogin(container) {
     <div class="brand-sub">sign in</div>
 
     <div class="step-title">Welcome Back</div>
-    <p class="step-tagline">Sign in with your Gmail to view your allocation and referral dashboard.</p>
+    <p class="step-tagline">Sign in with your username to view your allocation and referral dashboard.</p>
 
     <div class="input-group">
-      <label for="li-username">Gmail</label>
-      <input type="email" id="li-username" class="input-field" placeholder="you@gmail.com"
-        autocomplete="email" spellcheck="false" maxlength="254" />
+      <label for="li-username">Username</label>
+      <input type="text" id="li-username" class="input-field" placeholder="your_username"
+        autocomplete="username" spellcheck="false" maxlength="100" />
     </div>
 
     <p class="input-error" id="li-error"></p>
@@ -66,17 +66,7 @@ export function renderLogin(container) {
         submitBtn.textContent = 'Sign In';
         return;
       }
-      // Sybil check: block login if browser is bound to a different account
-      const deviceAccount = localStorage.getItem('zenkai_device_account');
-      if (deviceAccount && deviceAccount !== data.user.username) {
-        errorEl.textContent = 'This browser is registered to a different account.';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-        return;
-      }
       saveAuth(data.token, data.user);
-      // Bind browser to this account if not already set
-      localStorage.setItem('zenkai_device_account', data.user.username);
       // Route based on completion state
       const u = data.user;
       if (u.completed_at) {

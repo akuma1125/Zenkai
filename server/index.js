@@ -91,13 +91,6 @@ app.post('/api/wallets', async (req, res) => {
       `;
             return res.json({ success: true, message: 'Wallet added to allowlist' });
         } catch (err) {
-            // Unique constraint violation
-            if (err.code === '23505' || (err.message && err.message.includes('unique'))) {
-                return res.status(409).json({
-                    error: 'duplicate',
-                    message: 'Wallet already on allowlist',
-                });
-            }
             throw err;
         }
     } catch (err) {
@@ -128,9 +121,6 @@ app.post('/api/allowlist', async (req, res) => {
             await sql`INSERT INTO allowlist_fcfs (address, handle, ip, user_agent) VALUES (${normalizedAddress}, ${cleanHandle}, ${clientIp}, ${userAgent})`;
             return res.json({ success: true, message: 'Wallet added to FCFS allowlist' });
         } catch (err) {
-            if (err.code === '23505' || (err.message && err.message.includes('unique'))) {
-                return res.status(409).json({ error: 'duplicate', message: 'Wallet already on allowlist' });
-            }
             throw err;
         }
     } catch (err) {
@@ -219,16 +209,12 @@ function makeReferralCode() {
 app.post('/api/auth/signup', async (req, res) => {
     try {
         const { username, referralCode } = req.body;
-        const GMAIL_RE = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-        if (!username || !GMAIL_RE.test(username.trim()))
-            return res.status(400).json({ error: 'invalid', message: 'Please enter a valid Gmail address (@gmail.com)' });
+        if (!username || username.trim().length < 3)
+            return res.status(400).json({ error: 'invalid', message: 'Please enter a username (at least 3 characters)' });
 
         const cleanUsername = username.trim().toLowerCase();
 
         const sql = getDb();
-        const existing = await sql`SELECT id FROM users WHERE username = ${cleanUsername}`;
-        if (existing.length > 0)
-            return res.status(409).json({ error: 'duplicate', message: 'An account with this Gmail already exists' });
 
         const hash = 'email_only';
         let refCode = makeReferralCode();
@@ -261,13 +247,13 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const { username } = req.body;
         if (!username)
-            return res.status(400).json({ error: 'invalid', message: 'Gmail is required' });
+            return res.status(400).json({ error: 'invalid', message: 'Username is required' });
 
         const cleanUsername = username.trim().toLowerCase();
         const sql = getDb();
         const rows = await sql`SELECT * FROM users WHERE username = ${cleanUsername}`;
         if (rows.length === 0)
-            return res.status(401).json({ error: 'auth', message: 'No account found with this Gmail' });
+            return res.status(401).json({ error: 'auth', message: 'No account found with this username' });
 
         const user = rows[0];
 
