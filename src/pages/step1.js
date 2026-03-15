@@ -25,6 +25,8 @@ export function renderStep1(container) {
     return;
   }
 
+  localStorage.removeItem('zenkai_submitted_wallet');
+
   const handle = sessionStorage.getItem('zenkai_handle') || '';
   const completed = new Set();
   const linkClicked = new Set();
@@ -279,7 +281,6 @@ export function renderStep1(container) {
       if (res.ok) {
         sessionStorage.setItem('zenkai_handle', handle);
         sessionStorage.setItem('zenkai_quote_url', quoteLinkInput.value.trim());
-        localStorage.setItem('zenkai_submitted_wallet', address);
         navigate('/step5');
         return;
       }
