@@ -11,11 +11,11 @@ const tasks = [
   },
   {
     id: 'rt',
-    label: 'Like and Retweet <a href="https://x.com/zenkai_eth/status/2031739073694454013" target="_blank" rel="noopener">this post</a> and tag 2 friends',
+    label: 'Like and Retweet <a href="https://x.com/zenkai_eth/status/2033227054544499006" target="_blank" rel="noopener">this post</a> and tag 2 friends',
   },
   {
     id: 'quote',
-    label: 'Quote <a href="https://x.com/zenkai_eth/status/2031739073694454013" target="_blank" rel="noopener">this post</a> (caption "Zenk it") and paste the link below',
+    label: 'Quote <a href="https://x.com/zenkai_eth/status/2033227054544499006" target="_blank" rel="noopener">this post</a> (caption "Zenk it") and paste the link below',
   },
 ];
 
