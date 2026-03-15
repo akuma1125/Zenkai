@@ -26,7 +26,6 @@ export function renderStep1(container) {
   }
 
   const handle = sessionStorage.getItem('zenkai_handle') || '';
-  const prevWallet = localStorage.getItem('zenkai_submitted_wallet') || '';
   const completed = new Set();
   const linkClicked = new Set();
 
@@ -117,19 +116,6 @@ export function renderStep1(container) {
         </div>
       </div>
 
-      ${prevWallet ? `
-        <div class="wallet-previous-block">
-          <p class="wallet-disclaimer" style="margin-top:0;margin-bottom:12px;text-align:left">
-            Previous wallet found. You can keep it or submit a new one below.
-          </p>
-          <div class="wallet-handle-row" style="margin-bottom:12px">
-            <span class="wallet-handle-label">Previous Wallet</span>
-            <span class="wallet-handle-value" title="${prevWallet}">${shortAddr(prevWallet)}</span>
-          </div>
-          <button class="btn-ghost" id="use-prev-wallet">Use Previous Wallet</button>
-        </div>
-      ` : ''}
-
       <div class="input-group">
         <label for="wallet-input">EVM Wallet Address</label>
         <input
@@ -168,7 +154,6 @@ export function renderStep1(container) {
   const walletInput = document.getElementById('wallet-input');
   const walletError = document.getElementById('wallet-error');
   const submitBtn = document.getElementById('submit-btn');
-  const usePrevWalletBtn = document.getElementById('use-prev-wallet');
 
   function showHint(message) {
     taskHint.textContent = message;
@@ -257,15 +242,6 @@ export function renderStep1(container) {
     updateSubmitState();
   });
 
-  if (usePrevWalletBtn) {
-    usePrevWalletBtn.addEventListener('click', () => {
-      walletInput.value = prevWallet;
-      walletInput.classList.remove('error');
-      walletError.classList.remove('visible');
-      updateSubmitState();
-    });
-  }
-
   async function submitWallet() {
     const handle = getNormalizedHandle();
     const address = walletInput.value.trim();
@@ -327,8 +303,4 @@ export function renderStep1(container) {
 
   requestAnimationFrame(() => usernameInput.focus());
   updateSubmitState();
-}
-
-function shortAddr(addr) {
-  return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
 }
